@@ -1,0 +1,31 @@
+appId: com.cdrivecleaner.app
+productName: CDriveCleaner
+directories:
+  output: dist
+  buildResources: resources
+files:
+  - out/**/*
+  - package.json
+asar: true
+# sql.js 的 WASM 在主进程运行时通过 fs 读取，解包到 app.asar.unpacked 以保证可访问。
+asarUnpack:
+  - "**/node_modules/sql.js/dist/*.wasm"
+win:
+  target:
+    - nsis
+  icon: build/icon.ico
+  artifactName: ${productName}-${version}-setup.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: C盘安全清理
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  installerHeaderIcon: build/icon.ico
+# 内置规则随安装包放入 resources/rules，主进程经 process.resourcesPath 读取。
+extraResources:
+  - from: rules
+    to: rules

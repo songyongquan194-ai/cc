@@ -1,0 +1,178 @@
+[
+  {
+    "name": "Windows User Temp",
+    "category": "sys_temp",
+    "match": { "path_globs": ["%TEMP%\\*", "%TMP%\\*"], "min_age_days": 1 },
+    "risk_level": "safe",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "用户临时文件，通常可重新生成，清理低风险。",
+    "priority_class": 4
+  },
+  {
+    "name": "Windows System Temp",
+    "category": "sys_temp",
+    "match": { "path_globs": ["C:\\Windows\\Temp\\*"], "min_age_days": 1 },
+    "risk_level": "safe",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "系统临时文件，可清理。被占用的文件会自动跳过。",
+    "priority_class": 4
+  },
+  {
+    "name": "Thumbnail Cache",
+    "category": "sys_thumbnail",
+    "match": { "path_globs": ["%LOCALAPPDATA%\\Microsoft\\Windows\\Explorer\\thumbcache_*.db"] },
+    "risk_level": "safe",
+    "default_action": "clean",
+    "delete_policy": "delete_self",
+    "requires_app_closed": false,
+    "explain": "缩略图缓存，清理后首次浏览文件夹会重新生成。",
+    "priority_class": 4
+  },
+  {
+    "name": "Crash Dumps",
+    "category": "sys_crashdump",
+    "match": { "path_globs": ["%LOCALAPPDATA%\\CrashDumps\\*", "C:\\Windows\\Minidump\\*"] },
+    "risk_level": "safe",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "崩溃转储文件，用于事后诊断，一般可清理。",
+    "priority_class": 4
+  },
+  {
+    "name": "Windows Update Cache",
+    "category": "sys_update_cache",
+    "match": { "path_globs": ["C:\\Windows\\SoftwareDistribution\\Download\\*"] },
+    "risk_level": "low",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "Windows 更新下载缓存，清理前建议先暂停更新服务。",
+    "priority_class": 3
+  },
+  {
+    "name": "Chrome Cache",
+    "category": "browser_cache",
+    "match": { "path_globs": ["%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*\\Cache\\*", "%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*\\Code Cache\\*"] },
+    "risk_level": "safe",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "Chrome 缓存，可重新生成，清理后部分网页首次加载变慢。",
+    "priority_class": 3
+  },
+  {
+    "name": "Chrome GPU Cache",
+    "category": "browser_gpu",
+    "match": { "path_globs": ["%LOCALAPPDATA%\\Google\\Chrome\\User Data\\*\\GPUCache\\*"] },
+    "risk_level": "safe",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "Chrome GPU 缓存，可重新生成。",
+    "priority_class": 3
+  },
+  {
+    "name": "Edge Cache",
+    "category": "browser_cache",
+    "match": { "path_globs": ["%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\*\\Cache\\*", "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\*\\Code Cache\\*"] },
+    "risk_level": "safe",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "Edge 缓存，可重新生成。",
+    "priority_class": 3
+  },
+  {
+    "name": "Chrome Profile (protected)",
+    "category": "browser_profile",
+    "match": { "path_globs": ["%LOCALAPPDATA%\\Google\\Chrome\\User Data\\Default", "%LOCALAPPDATA%\\Microsoft\\Edge\\User Data\\Default"] },
+    "risk_level": "high",
+    "default_action": "none",
+    "delete_policy": "none",
+    "requires_app_closed": false,
+    "explain": "浏览器用户数据目录，含书签/密码/Cookie，仅展示不处理。",
+    "priority_class": 2
+  },
+  {
+    "name": "npm cache",
+    "category": "dev_pkg_cache",
+    "match": { "path_globs": ["%LOCALAPPDATA%\\npm-cache\\*", "%APPDATA%\\npm-cache\\*"] },
+    "risk_level": "medium",
+    "default_action": "migrate",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "npm 包缓存，可重新下载，建议迁移冷藏而非直接删除。",
+    "priority_class": 3
+  },
+  {
+    "name": "pip cache",
+    "category": "dev_pip_cache",
+    "match": { "path_globs": ["%LOCALAPPDATA%\\pip\\Cache\\*"] },
+    "risk_level": "medium",
+    "default_action": "migrate",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "pip 下载缓存，可重新下载，建议迁移。",
+    "priority_class": 3
+  },
+  {
+    "name": "Gradle cache",
+    "category": "dev_jvm_cache",
+    "match": { "path_globs": ["%USERPROFILE%\\.gradle\\caches\\*"] },
+    "risk_level": "medium",
+    "default_action": "migrate",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "Gradle 构建缓存，可重新拉取，建议迁移。",
+    "priority_class": 3
+  },
+  {
+    "name": "Cargo registry",
+    "category": "dev_cargo_cache",
+    "match": { "path_globs": ["%USERPROFILE%\\.cargo\\registry\\*"] },
+    "risk_level": "medium",
+    "default_action": "migrate",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "Cargo 依赖缓存，可重新下载，建议迁移。",
+    "priority_class": 3
+  },
+  {
+    "name": "Adobe Media Cache",
+    "category": "design_media_cache",
+    "match": { "path_globs": ["%APPDATA%\\Adobe\\Common\\Media Cache\\*", "%APPDATA%\\Adobe\\Common\\Media Cache Files\\*"] },
+    "risk_level": "medium",
+    "default_action": "migrate",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": true,
+    "explain": "Adobe 媒体缓存，关闭相关软件后可清理或迁移。",
+    "priority_class": 3
+  },
+  {
+    "name": "Generic ISO in Downloads",
+    "category": "pkg_installer",
+    "match": { "path_globs": ["%USERPROFILE%\\Downloads\\*"], "ext_in": [".iso", ".img"], "min_size_bytes": 104857600 },
+    "risk_level": "low",
+    "default_action": "migrate",
+    "delete_policy": "delete_self",
+    "requires_app_closed": false,
+    "explain": "下载目录中的大体积镜像文件，通常可重新下载，建议迁移冷藏。",
+    "priority_class": 4
+  },
+  {
+    "name": "Docker WSL vdisk (protected)",
+    "category": "vm_wsl",
+    "match": { "path_globs": ["%LOCALAPPDATA%\\Docker\\wsl\\*\\ext4.vhdx", "%LOCALAPPDATA%\\Packages\\*\\LocalState\\ext4.vhdx"] },
+    "risk_level": "high",
+    "default_action": "none",
+    "delete_policy": "none",
+    "requires_app_closed": false,
+    "explain": "WSL/Docker 虚拟磁盘，含容器数据，仅展示不处理。",
+    "priority_class": 2
+  }
+]
