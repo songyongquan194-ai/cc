@@ -1,0 +1,160 @@
+[
+  {
+    "name": "macOS User Caches",
+    "category": "sys_temp",
+    "match": { "path_globs": ["~/Library/Caches/*"], "min_age_days": 1 },
+    "risk_level": "safe",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "用户级应用缓存，通常可重新生成，清理低风险。",
+    "priority_class": 4
+  },
+  {
+    "name": "macOS Temp (TMPDIR)",
+    "category": "sys_temp",
+    "match": { "path_globs": ["$TMPDIR/*"], "min_age_days": 1 },
+    "risk_level": "safe",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "系统临时目录，可清理。被占用的文件会自动跳过。",
+    "priority_class": 4
+  },
+  {
+    "name": "macOS User Logs",
+    "category": "sys_temp",
+    "match": { "path_globs": ["~/Library/Logs/*"], "min_age_days": 3 },
+    "risk_level": "low",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "用户级日志，多用于事后诊断，一般可清理。",
+    "priority_class": 4
+  },
+  {
+    "name": "Chrome Cache (macOS)",
+    "category": "browser_cache",
+    "match": { "path_globs": ["~/Library/Caches/Google/Chrome/*"] },
+    "risk_level": "safe",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "Chrome 浏览器缓存，清理后首次访问网站会重新下载。",
+    "priority_class": 3
+  },
+  {
+    "name": "Safari Cache",
+    "category": "browser_cache",
+    "match": { "path_globs": ["~/Library/Caches/com.apple.Safari/*"] },
+    "risk_level": "safe",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "Safari 浏览器缓存，清理后首次访问网站会重新下载。",
+    "priority_class": 3
+  },
+  {
+    "name": "Xcode DerivedData",
+    "category": "dev_build_output",
+    "match": { "path_globs": ["~/Library/Developer/Xcode/DerivedData/*"] },
+    "risk_level": "low",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "Xcode 构建中间产物，下次编译会重新生成，通常可清理。",
+    "priority_class": 3
+  },
+  {
+    "name": "CoreSimulator Caches",
+    "category": "dev_build_output",
+    "match": { "path_globs": ["~/Library/Developer/CoreSimulator/Caches/*"] },
+    "risk_level": "low",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "iOS 模拟器缓存，可清理（不影响已安装模拟器运行时）。",
+    "priority_class": 3
+  },
+  {
+    "name": "npm Cache (macOS)",
+    "category": "dev_pkg_cache",
+    "match": { "path_globs": ["~/.npm/_cacache/*"] },
+    "risk_level": "low",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "npm 包缓存，可重新下载，清理低风险。",
+    "priority_class": 3
+  },
+  {
+    "name": "pip Cache (macOS)",
+    "category": "dev_pip_cache",
+    "match": { "path_globs": ["~/Library/Caches/pip/*"] },
+    "risk_level": "low",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "pip 下载缓存，可重新下载，清理低风险。",
+    "priority_class": 3
+  },
+  {
+    "name": "Gradle Caches (macOS)",
+    "category": "dev_jvm_cache",
+    "match": { "path_globs": ["~/.gradle/caches/*"] },
+    "risk_level": "low",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "Gradle 依赖缓存，可重新下载，清理低风险。",
+    "priority_class": 3
+  },
+  {
+    "name": "Cargo Registry (macOS)",
+    "category": "dev_cargo_cache",
+    "match": { "path_globs": ["~/.cargo/registry/*"] },
+    "risk_level": "low",
+    "default_action": "clean",
+    "delete_policy": "delete_children_only",
+    "requires_app_closed": false,
+    "explain": "Cargo 包注册缓存，可重新下载，清理低风险。",
+    "priority_class": 3
+  },
+  {
+    "name": "Maven Repository (macOS)",
+    "category": "dev_jvm_cache",
+    "match": { "path_globs": ["~/.m2/repository/*"] },
+    "risk_level": "low",
+    "default_action": "migrate",
+    "delete_policy": "none",
+    "requires_app_closed": false,
+    "explain": "Maven 本地仓库，体积可能较大；建议迁移冷藏而非直接删除。",
+    "priority_class": 3
+  },
+  {
+    "name": "Downloads Installers (macOS)",
+    "category": "pkg_installer",
+    "match": { "path_globs": ["~/Downloads/*"], "ext_in": [".dmg", ".pkg"], "min_age_days": 30 },
+    "risk_level": "low",
+    "default_action": "migrate",
+    "delete_policy": "none",
+    "requires_app_closed": false,
+    "explain": "下载目录中的安装镜像/安装包，通常可重新下载；建议迁移冷藏。",
+    "priority_class": 4
+  },
+  {
+    "name": "Downloads Archives (macOS)",
+    "category": "pkg_archive",
+    "match": {
+      "path_globs": ["~/Downloads/*"],
+      "ext_in": [".zip", ".tar", ".gz", ".tgz", ".bz2", ".7z", ".rar"],
+      "min_age_days": 30
+    },
+    "risk_level": "low",
+    "default_action": "migrate",
+    "delete_policy": "none",
+    "requires_app_closed": false,
+    "explain": "下载目录中的压缩包，长期未使用；建议迁移冷藏。",
+    "priority_class": 4
+  }
+]

@@ -1,6 +1,8 @@
 import type { FsAdapter } from './FsAdapter'
 import type { RuleEngine } from './RuleEngine'
 import type { ScanItem, ScanProgress, RiskLevel } from '@shared/types'
+import type { PlatformProfile } from './platform'
+import { getActiveProfile } from './platform'
 import { walk } from './Walker'
 import { isMigratableLargeFile } from './largeFile'
 
@@ -33,10 +35,15 @@ export interface ScanResult {
  * core 纯逻辑，依赖注入 FsAdapter/RuleEngine，可用内存 FS 单测。
  */
 export class ScanEngine {
+  private readonly p: PlatformProfile
+
   constructor(
     private readonly fs: FsAdapter,
-    private readonly rules: RuleEngine
-  ) {}
+    private readonly rules: RuleEngine,
+    profile?: PlatformProfile
+  ) {
+    this.p = profile ?? getActiveProfile()
+  }
 
   async scan(roots: string[], opts: ScanEngineOptions): Promise<ScanResult> {
     const start = Date.now()
@@ -84,7 +91,8 @@ export class ScanEngine {
         maxDepth: opts.maxDepth,
         excludedDirs: opts.excludedDirs,
         signal: opts.signal,
-        onDirError: (dir, code) => result.dir_errors.push({ dir, code })
+        onDirError: (dir, code) => result.dir_errors.push({ dir, code }),
+        profile: this.p
       })
 
       for await (const meta of iterator) {
@@ -106,7 +114,7 @@ export class ScanEngine {
           c.matched_rule === null &&
           meta.size_bytes >= opts.largeFileMinBytes &&
           // 排除可执行/动态库/模型/运行时组件：迁走会破坏应用（如剪映报错 1354）
-          isMigratableLargeFile(meta.path, meta.ext)
+          isMigratableLargeFile(meta.path, meta.ext, this.p)
 
         const record = c.default_action !== 'none' || c.risk_level === 'high' || isLarge
         if (record) {

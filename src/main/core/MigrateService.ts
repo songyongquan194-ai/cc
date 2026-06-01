@@ -1,9 +1,10 @@
-import { win32 as path } from 'path'
 import { randomUUID } from 'crypto'
 import type { FsAdapter } from './FsAdapter'
 import type { SafetyGuard } from './SafetyGuard'
 import type { ColdItem, ScanItem } from '@shared/types'
 import { AppError, ErrorCode } from '@shared/errors'
+import type { PlatformProfile } from './platform'
+import { getActiveProfile } from './platform'
 import { coldItemDir, resolveColdPath, expiresAt } from './coldPath'
 
 export interface MigrateLogEntry {
@@ -46,10 +47,15 @@ export interface MigrateReport {
  * core 纯逻辑，依赖注入 FsAdapter/SafetyGuard，可单测。
  */
 export class MigrateService {
+  private readonly p: PlatformProfile
+
   constructor(
     private readonly fs: FsAdapter,
-    private readonly guard: SafetyGuard
-  ) {}
+    private readonly guard: SafetyGuard,
+    profile?: PlatformProfile
+  ) {
+    this.p = profile ?? getActiveProfile()
+  }
 
   async migrate(items: ScanItem[], opts: MigrateOptions): Promise<MigrateReport> {
     const report: MigrateReport = {
@@ -119,8 +125,8 @@ export class MigrateService {
         await this.guard.assertSafe(item.path)
 
         // 2. 目标路径：<coldRoot>\<日期>\<分类>\<防重名文件>
-        const dir = coldItemDir(opts.coldRoot, item.category, now)
-        const coldPath = await resolveColdPath(dir, path.basename(item.path), (p) =>
+        const dir = coldItemDir(this.p.path, opts.coldRoot, item.category, now)
+        const coldPath = await resolveColdPath(this.p.path, dir, this.p.path.basename(item.path), (p) =>
           this.fs.exists(p)
         )
         this.guard.assertValidBackupTarget(coldPath) // 非 C 盘、非系统目录

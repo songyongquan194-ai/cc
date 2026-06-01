@@ -4,7 +4,8 @@ import type { ScanItem, ScanProgress, ScanType } from '@shared/types'
 import { NodeFsAdapter } from '@core/NodeFsAdapter'
 import { ScanEngine } from '@core/ScanEngine'
 import { buildRuleEngine } from '@core/Classifier'
-import { getScanRoots, SCAN_DEPTH, LARGE_FILE_MIN_BYTES } from '@core/scanTargets'
+import { SCAN_DEPTH, LARGE_FILE_MIN_BYTES } from '@core/scanTargets'
+import { getActiveProfile } from '@core/platform'
 import { loadBuiltinRules } from '../infra/rulesLoader'
 
 export interface ScanStartResult {
@@ -32,7 +33,7 @@ export class ScanService {
   }
 
   private buildEngine(): ScanEngine {
-    const builtin = loadBuiltinRules(this.resourcesPath)
+    const builtin = loadBuiltinRules(this.resourcesPath, getActiveProfile().id)
     const userRules = this.loadUserRules()
     return new ScanEngine(this.fs, buildRuleEngine(builtin, userRules))
   }
@@ -61,7 +62,7 @@ export class ScanService {
 
   async run(type: ScanType, sender: WebContents): Promise<ScanStartResult> {
     const excludedDirs = this.db.getSetting<string[]>('excluded_dirs', [])
-    const roots = getScanRoots(type)
+    const roots = getActiveProfile().getScanRoots(type)
 
     // 过滤实际存在的根目录
     const existingRoots: string[] = []

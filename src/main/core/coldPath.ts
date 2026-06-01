@@ -1,9 +1,9 @@
-import { win32 as path } from 'path'
+import type { PlatformPath } from './platform'
 
 /** 冷藏区根目录名（位于备份盘根，PRD §10.3）。 */
 export const COLD_DIRNAME = 'CDrive_ColdStorage'
 
-export function coldStorageRoot(backupRoot: string): string {
+export function coldStorageRoot(path: PlatformPath, backupRoot: string): string {
   return path.join(backupRoot, COLD_DIRNAME)
 }
 
@@ -15,8 +15,13 @@ export function dateDir(d: Date = new Date()): string {
   return `${y}-${m}-${day}`
 }
 
-/** 冷藏目标目录：<coldRoot>\<日期>\<分类>。 */
-export function coldItemDir(coldRoot: string, category: string, when: Date = new Date()): string {
+/** 冷藏目标目录：<coldRoot>/<日期>/<分类>。 */
+export function coldItemDir(
+  path: PlatformPath,
+  coldRoot: string,
+  category: string,
+  when: Date = new Date()
+): string {
   return path.join(coldRoot, dateDir(when), category || 'uncategorized')
 }
 
@@ -25,6 +30,7 @@ export function coldItemDir(coldRoot: string, category: string, when: Date = new
  * exists 回调判断候选是否已存在；冲突则追加 " (1)"、" (2)"…
  */
 export async function resolveColdPath(
+  path: PlatformPath,
   dir: string,
   basename: string,
   exists: (p: string) => Promise<boolean>

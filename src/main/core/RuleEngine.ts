@@ -1,6 +1,6 @@
 import type { Classification, FileMeta, Rule } from '@shared/types'
-import { expandEnv, globToRegExp, normalizePath } from './pathUtils'
-import { isForbidden } from './forbidden'
+import type { PlatformProfile } from './platform'
+import { getActiveProfile } from './platform'
 
 interface CompiledRule extends Rule {
   _regexps: RegExp[]
@@ -9,25 +9,28 @@ interface CompiledRule extends Rule {
 /**
  * 规则匹配与优先级裁决。实现 TECH_DESIGN.md §4.2：
  * 按 priority_class 升序裁决，先命中即终止；低优先级不能覆盖高优先级。
+ * 路径展开/匹配/禁止判断经 PlatformProfile 抽象。
  */
 export class RuleEngine {
   private compiled: CompiledRule[]
+  private readonly p: PlatformProfile
 
-  constructor(rules: Rule[], env: NodeJS.ProcessEnv = process.env) {
+  constructor(rules: Rule[], env: NodeJS.ProcessEnv = process.env, profile?: PlatformProfile) {
+    this.p = profile ?? getActiveProfile()
     this.compiled = rules
       .map((r) => ({
         ...r,
-        _regexps: r.match.path_globs.map((g) => globToRegExp(expandEnv(g, env)))
+        _regexps: r.match.path_globs.map((g) => this.p.globToRegExp(this.p.expandEnv(g, env)))
       }))
       .sort((a, b) => a.priority_class - b.priority_class)
   }
 
   /** 对单个文件/目录裁决分类。无命中返回 uncategorized。 */
   classify(meta: FileMeta): Classification {
-    const norm = normalizePath(meta.path)
+    const norm = this.p.normalizePath(meta.path)
 
     // 禁止目录硬规则（class 0）优先于一切，即使没有显式 rule 命中。
-    if (isForbidden(norm)) {
+    if (this.p.isForbidden(norm)) {
       return {
         category: 'uncategorized',
         risk_level: 'forbidden',

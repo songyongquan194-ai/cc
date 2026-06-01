@@ -3,7 +3,7 @@ import type { Db } from '../infra/Db'
 import type { ScanItem, ColdItem } from '@shared/types'
 import { NodeFsAdapter } from '@core/NodeFsAdapter'
 import { SafetyGuard } from '@core/SafetyGuard'
-import { driveLetter } from '@core/pathUtils'
+import { getActiveProfile } from '@core/platform'
 import { MigrateService, type MigrateReport, type MigrateLogEntry } from '@core/MigrateService'
 import { evaluateMigration, type MigrationPlan } from '@core/spacePolicy'
 import { AppError, ErrorCode } from '@shared/errors'
@@ -71,7 +71,7 @@ export class MigrateRunner {
     }
 
     const backup = await this.fs.diskSpace(info.path)
-    const system = await this.fs.diskSpace('C:\\')
+    const system = await this.fs.diskSpace(getActiveProfile().systemAnchor)
     const plan = evaluateMigration({ backup, system, batchBytes })
     return { ...plan, backup_set: true, item_count: items.length }
   }
@@ -87,12 +87,13 @@ export class MigrateRunner {
 
     const items = this.select(scanId, paths)
     const excludedDirs = this.db.getSetting<string[]>('excluded_dirs', [])
+    const profile = getActiveProfile()
     const guard = new SafetyGuard(this.fs, {
       excludedDirs,
       systemDrive: 'C:',
-      backupDrive: driveLetter(info.path)
+      backupDrive: profile.volumeKeyOf(info.path)
     })
-    const svc = new MigrateService(this.fs, guard)
+    const svc = new MigrateService(this.fs, guard, profile)
 
     this.signal = { cancelled: false }
     const batchId = `migrate-${Date.now()}`

@@ -1,9 +1,8 @@
-import { win32 as path } from 'path'
 import type { FsAdapter } from './FsAdapter'
 import type { ColdItem } from '@shared/types'
 import { AppError, ErrorCode } from '@shared/errors'
-import { isForbidden } from './forbidden'
-import { isDriveRoot, driveLetter, normalizePath } from './pathUtils'
+import type { PlatformProfile } from './platform'
+import { getActiveProfile } from './platform'
 import { resolveColdPath } from './coldPath'
 
 export type RestoreIssue =
@@ -47,10 +46,17 @@ export interface RestoreResult {
  * 不变量（PRD §11.4 / §5.5）：恢复未成功完成前绝不删除冷藏文件；恢复到系统关键目录被阻止。
  */
 export class RestoreService {
-  constructor(private readonly fs: FsAdapter) {}
+  private readonly p: PlatformProfile
+
+  constructor(
+    private readonly fs: FsAdapter,
+    profile?: PlatformProfile
+  ) {
+    this.p = profile ?? getActiveProfile()
+  }
 
   private targetOf(item: ColdItem, opts: RestoreOptions): string {
-    return normalizePath(opts.targetPath ?? item.original_path)
+    return this.p.normalizePath(opts.targetPath ?? item.original_path)
   }
 
   /** 前置检查，返回阻塞项供 UI 引导用户处置（不做任何写操作）。 */
@@ -58,19 +64,16 @@ export class RestoreService {
     const target = this.targetOf(item, opts)
     const issues: RestoreIssue[] = []
 
-    if (isForbidden(target) || isDriveRoot(target)) issues.push('forbidden_target')
+    if (this.p.isForbidden(target) || this.p.isVolumeRoot(target)) issues.push('forbidden_target')
     if (!(await this.fs.exists(item.cold_path))) issues.push('cold_missing')
 
-    const parent = path.dirname(target)
+    const parent = this.p.path.dirname(target)
     if (!(await this.fs.exists(parent))) issues.push('parent_missing')
     if (await this.fs.exists(target)) issues.push('target_exists')
 
     try {
-      const drive = driveLetter(target)
-      if (drive) {
-        const { free } = await this.fs.diskSpace(drive + '\\')
-        if (free < item.size_bytes) issues.push('insufficient_space')
-      }
+      const { free } = await this.fs.diskSpace(this.p.diskAnchor(target))
+      if (free < item.size_bytes) issues.push('insufficient_space')
     } catch {
       // 盘不可达时由实际恢复阶段兜底
     }
@@ -82,7 +85,7 @@ export class RestoreService {
     let target = this.targetOf(item, opts)
 
     // 1. 禁止恢复到系统关键目录 / 盘根（PRD §11.4，硬阻止，不可覆盖）
-    if (isForbidden(target) || isDriveRoot(target)) {
+    if (this.p.isForbidden(target) || this.p.isVolumeRoot(target)) {
       return { status: 'failed', error_code: ErrorCode.PATH_FORBIDDEN, error_detail: target, cold_kept: true }
     }
 
@@ -92,7 +95,7 @@ export class RestoreService {
     }
 
     // 3. 父目录缺失 → 重建或取消
-    const parent = path.dirname(target)
+    const parent = this.p.path.dirname(target)
     if (!(await this.fs.exists(parent))) {
       if (opts.createParent) {
         await this.fs.mkdirp(parent)
@@ -105,7 +108,7 @@ export class RestoreService {
     if (await this.fs.exists(target)) {
       const res = opts.onConflict
       if (res === 'keep_both') {
-        target = await resolveColdPath(parent, path.basename(target), (p) => this.fs.exists(p))
+        target = await resolveColdPath(this.p.path, parent, this.p.path.basename(target), (p) => this.fs.exists(p))
       } else if (res === 'overwrite') {
         await this.fs.unlink(target) // UI 已做二次确认
       } else {
@@ -115,12 +118,9 @@ export class RestoreService {
 
     // 5. 空间检查
     try {
-      const drive = driveLetter(target)
-      if (drive) {
-        const { free } = await this.fs.diskSpace(drive + '\\')
-        if (free < item.size_bytes) {
-          return { status: 'failed', error_code: ErrorCode.INSUFFICIENT_SPACE, error_detail: target, cold_kept: true }
-        }
+      const { free } = await this.fs.diskSpace(this.p.diskAnchor(target))
+      if (free < item.size_bytes) {
+        return { status: 'failed', error_code: ErrorCode.INSUFFICIENT_SPACE, error_detail: target, cold_kept: true }
       }
     } catch {
       // 忽略，进入复制阶段兜底

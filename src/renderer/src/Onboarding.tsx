@@ -67,9 +67,9 @@ export default function Onboarding({ onDone }: { onDone: (goScan: boolean) => vo
 
         {step === 0 && (
           <Space direction="vertical" size="middle" style={{ width: '100%' }}>
-            <Title level={4}>欢迎使用 C 盘安全清理与文件冷藏</Title>
+            <Title level={4}>欢迎使用 系统盘安全清理与文件冷藏</Title>
             <Paragraph>
-              本工具帮你安全地释放 C 盘空间。核心原则：
+              本工具帮你安全地释放系统盘空间。核心原则：
             </Paragraph>
             <ul>
               <li><Text strong>确定安全的</Text>（系统临时、缓存、回收站等）才自动清理；</li>
@@ -96,7 +96,7 @@ export default function Onboarding({ onDone }: { onDone: (goScan: boolean) => vo
             <Alert
               type="info"
               showIcon
-              message="备份盘用于冷藏迁移的文件，必须是非系统盘（不能是 C 盘）、非系统目录且可写。可用外接移动硬盘。"
+              message="备份盘用于冷藏迁移的文件，必须是非系统盘（不能是系统盘/启动盘）、非系统目录且可写。可用外接移动硬盘。"
             />
             <Space wrap>
               <Input
@@ -135,7 +135,7 @@ export default function Onboarding({ onDone }: { onDone: (goScan: boolean) => vo
               }
             />
             {sys && sys.total > 0 && (
-              <Card size="small" title="C 盘空间">
+              <Card size="small" title="系统盘空间">
                 <Space>
                   <Progress
                     type="circle"

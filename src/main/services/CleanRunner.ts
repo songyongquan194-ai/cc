@@ -4,7 +4,7 @@ import type { ScanItem } from '@shared/types'
 import { NodeFsAdapter } from '@core/NodeFsAdapter'
 import { SafetyGuard } from '@core/SafetyGuard'
 import { CleanService, type CleanReport, type CleanLogEntry } from '@core/CleanService'
-import { emptyRecycleBin } from './winShell'
+import { emptyTrash } from './platformShell'
 
 export interface CleanRunOptions {
   scanId: number
@@ -106,7 +106,7 @@ export class CleanRunner {
 
   /** 经 Shell API 清空回收站（TDD §4.3），并记一条 operations 日志。 */
   async emptyRecycleBin(): Promise<{ ok: boolean; error?: string }> {
-    const res = await emptyRecycleBin()
+    const res = await emptyTrash()
     this.db.logOperation({
       ts: new Date().toISOString(),
       op_type: 'clean',

@@ -1,6 +1,7 @@
 import type { FsAdapter } from './FsAdapter'
 import type { FileMeta } from '@shared/types'
-import { isUnder, normalizePath } from './pathUtils'
+import type { PlatformProfile } from './platform'
+import { getActiveProfile } from './platform'
 
 export interface WalkOptions {
   maxDepth: number
@@ -9,28 +10,33 @@ export interface WalkOptions {
   signal?: { cancelled: boolean }
   /** 无权限/被占用的目录回调（标记而非中断，PRD §7.4） */
   onDirError?: (dir: string, code: string) => void
+  /** 平台档，默认按当前平台自动选择。决定路径分隔符与归一化语义。 */
+  profile?: PlatformProfile
 }
 
 /**
  * 深度优先遍历目录，产出文件与目录的元数据。
  * 安全约束（TDD §7.4）：不跟随符号链接/junction；无权限目录跳过并标记；不读取文件内容。
+ * 路径语义经 PlatformProfile 抽象（Windows \ / macOS /）。
  */
 export async function* walk(
   fs: FsAdapter,
   root: string,
   opts: WalkOptions
 ): AsyncGenerator<FileMeta> {
-  yield* walkDir(fs, normalizePath(root), 0, opts)
+  const p = opts.profile ?? getActiveProfile()
+  yield* walkDir(fs, p.normalizePath(root), 0, opts, p)
 }
 
 async function* walkDir(
   fs: FsAdapter,
   dir: string,
   depth: number,
-  opts: WalkOptions
+  opts: WalkOptions,
+  p: PlatformProfile
 ): AsyncGenerator<FileMeta> {
   if (opts.signal?.cancelled) return
-  if (opts.excludedDirs.some((ex) => isUnder(ex, dir))) return
+  if (opts.excludedDirs.some((ex) => p.isUnder(ex, dir))) return
 
   let names: string[]
   try {
@@ -42,7 +48,7 @@ async function* walkDir(
 
   for (const name of names) {
     if (opts.signal?.cancelled) return
-    const full = dir + '\\' + name
+    const full = p.path.join(dir, name)
 
     let meta: FileMeta
     try {
@@ -60,7 +66,7 @@ async function* walkDir(
     if (meta.is_dir) {
       yield meta
       if (depth < opts.maxDepth) {
-        yield* walkDir(fs, full, depth + 1, opts)
+        yield* walkDir(fs, full, depth + 1, opts, p)
       }
     } else {
       yield meta

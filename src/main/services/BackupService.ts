@@ -4,8 +4,9 @@ import type { Db } from '../infra/Db'
 import { NodeFsAdapter } from '@core/NodeFsAdapter'
 import { SafetyGuard } from '@core/SafetyGuard'
 import { coldStorageRoot } from '@core/coldPath'
+import { getActiveProfile } from '@core/platform'
 import { readManifest, writeManifest } from '../infra/manifest'
-import { getVolumeSerial } from './winShell'
+import { getVolumeId } from './platformShell'
 import { AppError } from '@shared/errors'
 
 export interface BackupInfo {
@@ -32,7 +33,7 @@ export class BackupService {
     if (!path) return null
     return {
       path,
-      cold_root: this.db.getSetting<string>('cold_storage_root', coldStorageRoot(path)),
+      cold_root: this.db.getSetting<string>('cold_storage_root', coldStorageRoot(getActiveProfile().path, path)),
       volume_serial: this.db.getSetting<string | null>('backup_volume_serial', null),
       cold_period_days: this.db.getSetting<number>('default_cold_period_days', 90)
     }
@@ -57,7 +58,7 @@ export class BackupService {
     } catch {
       return { ok: false, error: '所选目录不可写（请检查权限或换一个目录）' }
     }
-    const serial = await getVolumeSerial(path)
+    const serial = await getVolumeId(path)
     return { ok: true, volume_serial: serial }
   }
 
@@ -66,7 +67,7 @@ export class BackupService {
     const v = await this.validate(path)
     if (!v.ok) return { ok: false, error: v.error }
 
-    const coldRoot = coldStorageRoot(path)
+    const coldRoot = coldStorageRoot(getActiveProfile().path, path)
     await this.fs.mkdirp(coldRoot)
     await this.fs.mkdirp(join(coldRoot, 'logs'))
     // 初始化 manifest（若不存在）
@@ -88,7 +89,7 @@ export class BackupService {
     if (!info) return false
     if (!(await this.fs.exists(info.path))) return false
     if (!info.volume_serial) return true // 无记录则不强校验
-    const cur = await getVolumeSerial(info.path)
+    const cur = await getVolumeId(info.path)
     return cur === null || cur === info.volume_serial
   }
 }

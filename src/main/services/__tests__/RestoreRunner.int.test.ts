@@ -8,6 +8,7 @@ import { MigrateRunner } from '../MigrateRunner'
 import { ColdService } from '../ColdService'
 import { RestoreRunner } from '../RestoreRunner'
 import { coldStorageRoot } from '@core/coldPath'
+import { getActiveProfile } from '@core/platform'
 
 const require_ = createRequire(import.meta.url)
 const locate = (f: string): string => require_.resolve(`sql.js/dist/${f}`)
@@ -30,7 +31,7 @@ async function migrateOne(): Promise<{
   mkdirSync(srcDir, { recursive: true })
   const db = await Db.create(join(base, 'app.db'), locate)
   db.setSetting('backup_drive_path', backupRoot)
-  db.setSetting('cold_storage_root', coldStorageRoot(backupRoot))
+  db.setSetting('cold_storage_root', coldStorageRoot(getActiveProfile().path, backupRoot))
   db.setSetting('default_cold_period_days', 90)
   db.run('INSERT INTO scans(type, started_at, status) VALUES(?,?,?)', ['deep', 'now', 'done'])
   const scanId = db.query<{ id: number }>('SELECT last_insert_rowid() AS id')[0].id

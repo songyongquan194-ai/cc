@@ -2,8 +2,8 @@
 // 不信任模型输出：任何越界（删除高风险/碰禁止目录/提权动作）都在此被收敛或拒绝。
 
 import type { AIAdvice, RiskLevel, Rule } from '@shared/types'
-import { isForbidden } from '../forbidden'
-import { expandEnv, globToRegExp } from '../pathUtils'
+import type { PlatformProfile } from '../platform'
+import { getActiveProfile } from '../platform'
 
 /** 默认绝不自动处理的风险等级。AI 不得建议自动删除这些项。 */
 export const RISK_NEVER_AUTO = new Set<RiskLevel>(['high', 'forbidden'])
@@ -46,7 +46,11 @@ const ALLOWED_RULE_RISK = new Set<RiskLevel>(['safe', 'low', 'medium'])
  * - 任一 glob 命中禁止目录 → 整条拒绝；
  * 收敛后规则仍需进入预览确认，用户点确认才生效。
  */
-export function sanitizeRule(rule: Rule, env: NodeJS.ProcessEnv = process.env): RuleSanitizeResult {
+export function sanitizeRule(
+  rule: Rule,
+  env: NodeJS.ProcessEnv = process.env,
+  profile: PlatformProfile = getActiveProfile()
+): RuleSanitizeResult {
   const warnings: string[] = []
 
   if (!ALLOWED_RULE_RISK.has(rule.risk_level)) {
@@ -59,9 +63,9 @@ export function sanitizeRule(rule: Rule, env: NodeJS.ProcessEnv = process.env): 
 
   // glob 不得命中禁止目录。对每个 glob 用其字面前缀与展开后路径做判定。
   for (const glob of rule.match.path_globs) {
-    const expanded = expandEnv(glob, env)
+    const expanded = profile.expandEnv(glob, env)
     const literal = expanded.replace(/[*?].*$/, '').replace(/[\\/]+$/, '')
-    if (literal && isForbidden(literal)) {
+    if (literal && profile.isForbidden(literal)) {
       return {
         ok: false,
         warnings,
@@ -70,7 +74,7 @@ export function sanitizeRule(rule: Rule, env: NodeJS.ProcessEnv = process.env): 
     }
     // 校验 glob 可编译，避免坏正则
     try {
-      globToRegExp(expanded)
+      profile.globToRegExp(expanded)
     } catch {
       return { ok: false, warnings, error: `规则路径模式无效：${glob}` }
     }

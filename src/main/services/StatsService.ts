@@ -1,5 +1,6 @@
 import type { Db } from '../infra/Db'
 import { NodeFsAdapter } from '@core/NodeFsAdapter'
+import { getActiveProfile } from '@core/platform'
 import { BackupService } from './BackupService'
 
 export interface OperationRow {
@@ -59,7 +60,7 @@ export class StatsService {
   async overview(): Promise<OverviewData> {
     let system = { free: 0, total: 0 }
     try {
-      system = await this.fs.diskSpace('C:\\')
+      system = await this.fs.diskSpace(getActiveProfile().systemAnchor)
     } catch {
       /* 取盘信息失败时返回 0，不阻断概览 */
     }

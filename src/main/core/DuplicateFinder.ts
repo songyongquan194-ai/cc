@@ -1,4 +1,5 @@
-import { win32 as path } from 'path'
+import type { PlatformPath } from './platform'
+import { getActiveProfile } from './platform'
 
 /** 参与去重分析的文件（来自 scan_items，绝不含内容）。 */
 export interface DupFile {
@@ -52,7 +53,7 @@ const KEEP_PENALTY: { re: RegExp; score: number }[] = [
 ]
 
 /** 归一化文件名：小写、去扩展名外的副本标记，用于把「合同.pdf」与「合同 - 副本.pdf」归到一组。 */
-function normalizeName(p: string): string {
+function normalizeName(path: PlatformPath, p: string): string {
   const base = path.basename(p)
   const ext = path.extname(base).toLowerCase()
   let stem = base.slice(0, base.length - ext.length).toLowerCase().trim()
@@ -74,7 +75,7 @@ function keepScore(f: DupFile): number {
   return s
 }
 
-function buildReason(keep: DupFile, group: DupFile[]): string {
+function buildReason(path: PlatformPath, keep: DupFile, group: DupFile[]): string {
   const others = group.filter((f) => f.path !== keep.path)
   const keepDir = path.dirname(keep.path)
   const hint =
@@ -91,12 +92,16 @@ function buildReason(keep: DupFile, group: DupFile[]): string {
  * 在已扫描文件中查找重复候选（PRD §9：MVP 只做「同名同大小」候选，不做全盘哈希、不自动删除）。
  * 分组键 = 归一化文件名 + 大小；仅返回 count>1 的组。
  */
-export function findDuplicates(files: DupFile[], opts?: { minSize?: number }): DupGroup[] {
+export function findDuplicates(
+  files: DupFile[],
+  opts?: { minSize?: number; path?: PlatformPath }
+): DupGroup[] {
   const minSize = opts?.minSize ?? 1
+  const path = opts?.path ?? getActiveProfile().path
   const map = new Map<string, DupFile[]>()
   for (const f of files) {
     if (f.size_bytes < minSize) continue
-    const key = `${normalizeName(f.path)}::${f.size_bytes}`
+    const key = `${normalizeName(path, f.path)}::${f.size_bytes}`
     const arr = map.get(key)
     if (arr) arr.push(f)
     else map.set(key, [f])
@@ -115,7 +120,7 @@ export function findDuplicates(files: DupFile[], opts?: { minSize?: number }): D
       count: uniq.length,
       files: uniq,
       suggested_keep: keep.path,
-      reason: buildReason(keep, uniq)
+      reason: buildReason(path, keep, uniq)
     })
   }
   // 按「可回收空间」降序：组大小 ×（份数-1）

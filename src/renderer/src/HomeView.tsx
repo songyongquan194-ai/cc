@@ -34,7 +34,7 @@ export default function HomeView({ onGoScan }: { onGoScan?: () => void }): JSX.E
     <Space direction="vertical" size="large" style={{ width: '100%' }}>
       <Card
         size="small"
-        title="C 盘空间"
+        title="系统盘空间"
         loading={loading}
         extra={<Button size="small" onClick={() => void load()}>刷新</Button>}
       >
@@ -62,7 +62,7 @@ export default function HomeView({ onGoScan }: { onGoScan?: () => void }): JSX.E
             </Col>
           </Row>
         ) : (
-          <Text type="secondary">无法读取 C 盘空间信息。</Text>
+          <Text type="secondary">无法读取系统盘空间信息。</Text>
         )}
       </Card>
 

@@ -4,8 +4,8 @@
 // 读取到的片段只发本机 Ollama，绝不出网（由 LocalProvider.isLocalEndpoint 兜底）。
 
 import type { AIIdentifyInput } from '@shared/types'
-import { normalizePath } from '../pathUtils'
-import { isForbidden } from '../forbidden'
+import type { PlatformProfile } from '../platform'
+import { getActiveProfile } from '../platform'
 
 /** 允许读取内容的文本类扩展名白名单。 */
 const PEEK_EXTS = new Set([
@@ -19,25 +19,29 @@ const PEEK_EXTS = new Set([
 /** 敏感文件名/扩展名：即便是文本也绝不读取内容。 */
 const SENSITIVE_NAME = /(\.env|\.pem|\.key|\.pfx|\.p12|\.keystore|\.kdbx|\.ovpn|id_rsa|id_ed25519|secret|password|passwd|credential|token|wallet|cookie)/i
 
-/** 敏感目录片段：其下文件不读内容。 */
+/** 敏感目录片段（统一用 / 分隔，匹配前会把路径分隔符归一化为 /）。其下文件不读内容。 */
 const SENSITIVE_DIR = [
-  '\\COOKIES', '\\LOGIN DATA', '\\WEB DATA', '\\.SSH\\', '\\.AWS\\', '\\.GNUPG\\',
-  '\\KEYRINGS\\', '\\CREDENTIAL', '\\WALLET', '\\.DOCKER\\CONTEXTS'
+  '/COOKIES', '/LOGIN DATA', '/WEB DATA', '/.SSH/', '/.AWS/', '/.GNUPG/',
+  '/KEYRINGS/', '/CREDENTIAL', '/WALLET', '/.DOCKER/CONTEXTS'
 ]
 
 /** 仅对 ≤512KB 的文件考虑读取片段。 */
 export const MAX_PEEK_SIZE = 512 * 1024
 
 /** 该文件是否允许读取内容片段（安全闸门）。 */
-export function shouldPeekContent(input: AIIdentifyInput): boolean {
+export function shouldPeekContent(
+  input: AIIdentifyInput,
+  profile: PlatformProfile = getActiveProfile()
+): boolean {
   if (input.risk_level === 'high' || input.risk_level === 'forbidden') return false
   if (!input.size_bytes || input.size_bytes <= 0 || input.size_bytes > MAX_PEEK_SIZE) return false
   if (!PEEK_EXTS.has((input.ext || '').toLowerCase())) return false
 
-  const norm = normalizePath(input.path)
-  if (isForbidden(norm)) return false
-  const up = norm.toUpperCase()
-  const base = up.split('\\').pop() ?? ''
+  const norm = profile.normalizePath(input.path)
+  if (profile.isForbidden(norm)) return false
+  // 归一化为 / 分隔后做敏感目录/文件名判定，兼容两平台。
+  const up = norm.toUpperCase().replace(/\\/g, '/')
+  const base = profile.path.basename(norm).toUpperCase()
   if (SENSITIVE_NAME.test(base)) return false
   if (SENSITIVE_DIR.some((d) => up.includes(d))) return false
   return true

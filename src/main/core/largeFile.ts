@@ -1,4 +1,5 @@
-import { normalizePath } from './pathUtils'
+import type { PlatformProfile } from './platform'
+import { getActiveProfile } from './platform'
 
 /**
  * 深度扫描"大文件兜底迁移"的安全过滤。
@@ -22,22 +23,22 @@ const RUNTIME_EXTS = new Set([
   '.pak', '.wasm'
 ])
 
-/** 应用内部"运行时组件/安装"目录标记：其下文件视为应用自有组件，不参与兜底迁移。 */
-const RUNTIME_DIR_MARKERS = [
-  '\\COMPONENTSTORE\\', // 如 JianyingPro\User Data\ComponentStore\onnxruntime_gpu\...
-  '\\COMPONENTS\\',
-  '\\RUNTIME\\',
-  '\\RUNTIMES\\'
-]
+/** 应用内部"运行时组件/安装"目录名：其下文件视为应用自有组件，不参与兜底迁移。 */
+const RUNTIME_DIR_NAMES = new Set(['COMPONENTSTORE', 'COMPONENTS', 'RUNTIME', 'RUNTIMES'])
 
 /**
  * 该"大文件"是否适合作为兜底项自动迁移冷藏。
  * 仅排除明显的应用运行时/二进制；其余大文件（媒体、压缩包、镜像等惰性数据）仍可迁移。
+ * 路径归一化经 PlatformProfile，目录名匹配与分隔符无关。
  */
-export function isMigratableLargeFile(path: string, ext: string): boolean {
+export function isMigratableLargeFile(
+  path: string,
+  ext: string,
+  profile: PlatformProfile = getActiveProfile()
+): boolean {
   const e = (ext || '').toLowerCase()
   if (RUNTIME_EXTS.has(e)) return false
-  const up = normalizePath(path).toUpperCase()
-  if (RUNTIME_DIR_MARKERS.some((m) => up.includes(m))) return false
+  const segs = profile.normalizePath(path).toUpperCase().split(/[\\/]/)
+  if (segs.some((s) => RUNTIME_DIR_NAMES.has(s))) return false
   return true
 }

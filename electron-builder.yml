@@ -15,6 +15,15 @@ win:
     - nsis
   icon: build/icon.ico
   artifactName: ${productName}-${version}-setup.${ext}
+mac:
+  target:
+    - dmg
+    - zip
+  category: public.app-category.utilities
+  artifactName: ${productName}-${version}-${arch}.${ext}
+  # 未签名构建：关闭 hardened runtime 与签名身份。用户首次右键『打开』绕过 Gatekeeper。
+  hardenedRuntime: false
+  identity: null
 nsis:
   oneClick: false
   perMachine: false

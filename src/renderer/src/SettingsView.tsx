@@ -96,7 +96,7 @@ export default function SettingsView(): JSX.Element {
           type="info"
           showIcon
           style={{ marginBottom: 16 }}
-          message="备份盘用于冷藏迁移的文件。必须是非系统盘（不能是 C 盘）、非系统目录，且可写。可使用外接移动硬盘。"
+          message="备份盘用于冷藏迁移的文件。必须是非系统盘（不能是系统盘/启动盘）、非系统目录，且可写。可使用外接移动硬盘。"
         />
         <Space direction="vertical" style={{ width: '100%' }}>
           <Space wrap>

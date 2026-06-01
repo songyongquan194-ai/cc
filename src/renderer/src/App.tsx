@@ -65,7 +65,7 @@ export default function App(): JSX.Element {
     <Layout style={{ minHeight: '100vh' }}>
       <Header style={{ background: '#fff', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingInline: 24 }}>
         <Title level={4} style={{ margin: 0, whiteSpace: 'nowrap' }}>
-          C 盘安全清理与文件冷藏
+          系统盘安全清理与文件冷藏
         </Title>
         <Menu
           mode="horizontal"

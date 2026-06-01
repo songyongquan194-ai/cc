@@ -67,7 +67,7 @@ export default function MigratePanel({ scanId }: { scanId: number }): JSX.Elemen
         <div>
           <Paragraph>将迁移 <Text strong>{selected.length}</Text> 个文件到备份盘冷藏区：</Paragraph>
           <Row gutter={12}>
-            <Col span={8}><Statistic title="释放 C 盘" value={formatBytes(plan.c_freed_bytes)} valueStyle={{ color: '#3f8600', fontSize: 18 }} /></Col>
+            <Col span={8}><Statistic title="释放系统盘" value={formatBytes(plan.c_freed_bytes)} valueStyle={{ color: '#3f8600', fontSize: 18 }} /></Col>
             <Col span={8}><Statistic title="占用备份盘" value={formatBytes(plan.backup_used_bytes)} valueStyle={{ fontSize: 18 }} /></Col>
             <Col span={8}><Statistic title="迁后备份盘剩余" value={formatBytes(plan.backup_free_after)} valueStyle={{ fontSize: 18 }} /></Col>
           </Row>
@@ -160,7 +160,7 @@ export default function MigratePanel({ scanId }: { scanId: number }): JSX.Elemen
         {report && (
           <Card size="small" type="inner" title="迁移报告">
             <Row gutter={16}>
-              <Col span={5}><Statistic title="已释放 C 盘" value={formatBytes(report.freed_bytes)} valueStyle={{ color: '#3f8600' }} /></Col>
+              <Col span={5}><Statistic title="已释放系统盘" value={formatBytes(report.freed_bytes)} valueStyle={{ color: '#3f8600' }} /></Col>
               <Col span={4}><Statistic title="迁移成功" value={report.migrated} /></Col>
               <Col span={5}><Statistic title="源保留" value={report.source_kept} valueStyle={report.source_kept ? { color: '#d48806' } : undefined} /></Col>
               <Col span={5}><Statistic title="跳过" value={report.skipped} /></Col>
